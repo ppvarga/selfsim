@@ -7,6 +7,8 @@ import datetime as dt
 from sklearn.linear_model import LinearRegression
 import random
 import ruptures as rpt
+import pandas as pd
+import jenkspy
 
 
 def parse_dict_year():  
@@ -93,17 +95,66 @@ def graph_random_year():
     plt.show()
 
 def graph_whole_dataset():
-    deviza = parse_dict()
+    df = pd.read_csv('data-deviza.csv')
+    df = df[df["iso_4217"] == "USD"]
+    df['date'] = pd.to_datetime(df['date'])
+    df.set_index(df['date'], inplace = True)
+    ts = df['value']
 
-    usd = deviza["USD"]
 
-    plt.title("USD")
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m/%d'))
-    plt.gca().xaxis.set_major_locator(mdates.YearLocator(base=10))
-    plt.yticks(np.arange(0, 310, 20))
-    plt.scatter(usd.keys(), usd.values(), s=1)
-    plt.gcf().autofmt_xdate()
+    n_breaks = 5
 
+    y = np.array(ts.tolist())
+
+    #dynp(ts, n_breaks, y)
+
+    jenks(ts, 30, y)
+
+def dynp(ts, n_breaks, y):
+    breakpoint_model = rpt.Dynp(model="l1")
+    breakpoint_model.fit(y)
+    breaks = breakpoint_model.predict(n_bkps=n_breaks-1)
+
+    breaks_rpt = []
+    for i in breaks:
+        breaks_rpt.append(ts.index[i-1])
+    breaks_rpt = pd.to_datetime(breaks_rpt)
+    print(breaks_rpt)
+
+    plt.scatter(ts.index, ts, s=1, label='data')
+    plt.title('Audience')
+    print_legend = True
+    for i in breaks_rpt:
+        if print_legend:
+            plt.axvline(i, color='red',linestyle='dashed', label='breaks')
+            print_legend = False
+        else:
+            plt.axvline(i, color='red',linestyle='dashed')
+    plt.grid()
+    plt.legend()
     plt.show()
 
-graph_random_year()
+def jenks(ts, n_breaks, y):
+    breaks = jenkspy.jenks_breaks(y, n_classes=n_breaks-1)
+    breaks.pop(0)
+    breaks.pop()
+    breaks_jkp = []
+    for v in breaks:
+        idx = ts.index[ts == v][0]
+        breaks_jkp.append(idx)
+    
+
+    plt.scatter(ts.index, ts, s=1, label='data')
+    plt.title('USD')
+    print_legend = True
+    for i in breaks_jkp:
+        if print_legend:
+            plt.axvline(i, color='red',linestyle='dashed', label='breaks')
+            print_legend = False
+        else:
+            plt.axvline(i, color='red',linestyle='dashed')
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+graph_whole_dataset()
