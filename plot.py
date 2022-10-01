@@ -99,31 +99,39 @@ def graph_whole_dataset():
     df = df[df["iso_4217"] == "USD"]
     df['date'] = pd.to_datetime(df['date'])
     df.set_index(df['date'], inplace = True)
-    ts = df['value']
-
 
     n_breaks = 5
 
+
+    pelt(df, n_breaks)
+
+    # jenks(ts, 5, y)
+
+def pelt(df, n_breaks):
+    ts = df['value']
     y = np.array(ts.tolist())
 
-    pelt(ts, n_breaks, y)
-
-    #jenks(ts, 5, y)
-
-def pelt(ts, n_breaks, y):
     breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
     breakpoint_model.fit(y)
-    breaks = breakpoint_model.predict(pen=10)
+    breaks = [0] + breakpoint_model.predict(pen=10)
 
+    separated = []
     breaks_rpt = []
-    for i in breaks:
-        breaks_rpt.append(ts.index[i-1])
-    breaks_rpt = pd.to_datetime(breaks_rpt)
-    print(breaks_rpt)
 
-    plt.scatter(ts.index, ts, s=1, label='data')
-    plt.title('Audience')
-    print_legend = True
+    for i in range(len(breaks)-1):
+        l = breaks[i]
+        h = breaks[i+1]
+
+        separated.append(df[l:h])
+
+        breaks_rpt.append(ts.index[h-1])
+
+    breaks_rpt = pd.to_datetime(breaks_rpt)
+
+    for frame in separated:
+        plt.scatter(x=frame['date'],y=frame['value'],s=1)
+
+    print_legend = False
     for i in breaks_rpt:
         if print_legend:
             plt.axvline(i, color='red',linestyle='dashed', label='breaks')
@@ -133,6 +141,8 @@ def pelt(ts, n_breaks, y):
     plt.grid()
     plt.legend()
     plt.show()
+    
+    
 
 def jenks(ts, n_breaks, y):
     breaks = jenkspy.jenks_breaks(y, n_classes=n_breaks)
