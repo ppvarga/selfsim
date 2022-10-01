@@ -106,14 +106,14 @@ def graph_whole_dataset():
 
     y = np.array(ts.tolist())
 
-    #dynp(ts, n_breaks, y)
+    pelt(ts, n_breaks, y)
 
-    jenks(ts, 30, y)
+    #jenks(ts, 5, y)
 
-def dynp(ts, n_breaks, y):
-    breakpoint_model = rpt.Dynp(model="l1")
+def pelt(ts, n_breaks, y):
+    breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
     breakpoint_model.fit(y)
-    breaks = breakpoint_model.predict(n_bkps=n_breaks-1)
+    breaks = breakpoint_model.predict(pen=10)
 
     breaks_rpt = []
     for i in breaks:
@@ -135,9 +135,7 @@ def dynp(ts, n_breaks, y):
     plt.show()
 
 def jenks(ts, n_breaks, y):
-    breaks = jenkspy.jenks_breaks(y, n_classes=n_breaks-1)
-    breaks.pop(0)
-    breaks.pop()
+    breaks = jenkspy.jenks_breaks(y, n_classes=n_breaks)
     breaks_jkp = []
     for v in breaks:
         idx = ts.index[ts == v][0]
