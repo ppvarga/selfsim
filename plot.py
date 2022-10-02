@@ -100,36 +100,50 @@ def graph_whole_dataset():
     df['date'] = pd.to_datetime(df['date'])
     df.set_index(df['date'], inplace = True)
 
-    n_breaks = 5
-
-
-    pelt(df, n_breaks)
+    pelt(df)
 
     # jenks(ts, 5, y)
 
-def pelt(df, n_breaks):
+def pelt(df):
+    plt.subplot(1,2,1)
+
     ts = df['value']
-    y = np.array(ts.tolist())
+    y0 = np.array(ts.tolist())
 
     breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
-    breakpoint_model.fit(y)
+    breakpoint_model.fit(y0)
     breaks = [0] + breakpoint_model.predict(pen=10)
 
-    separated = []
     breaks_rpt = []
+
+    notrend = []
 
     for i in range(len(breaks)-1):
         l = breaks[i]
         h = breaks[i+1]
 
-        separated.append(df[l:h])
+        frame = df[l:h]
+        
+        frame['ordinal'] = frame.date.map(dt.datetime.toordinal)
+
+        d = frame.date.values
+        x = frame.ordinal.values.reshape(-1,1)
+        y = frame.value.values.reshape(-1,1)
+
+        regr = LinearRegression()
+        regr.fit(x,y)
+
+        p = regr.predict(x)
+
+        notrend += list(y-p)
+
+        plt.plot(d,p,c='grey')
+        plt.scatter(d,y,s=1)
 
         breaks_rpt.append(ts.index[h-1])
 
     breaks_rpt = pd.to_datetime(breaks_rpt)
 
-    for frame in separated:
-        plt.scatter(x=frame['date'],y=frame['value'],s=1)
 
     print_legend = False
     for i in breaks_rpt:
@@ -140,6 +154,9 @@ def pelt(df, n_breaks):
             plt.axvline(i, color='red',linestyle='dashed')
     plt.grid()
     plt.legend()
+
+    plt.subplot(1,2,2)
+    plt.scatter(df.date.values, notrend, s=1)
     plt.show()
     
     
