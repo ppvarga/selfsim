@@ -18,7 +18,7 @@ def remove_trends(plot):
     breaks = pelt(ts)
 
     breaks_rpt = []
-    notrend = []
+    notrend = np.array([])
 
     for i in range(len(breaks)-1):
         l = breaks[i]
@@ -37,7 +37,7 @@ def remove_trends(plot):
 
         p = regr.predict(x)
 
-        notrend += list(y-p)
+        notrend = np.concatenate((notrend, (y-p).reshape(-1)))
 
         if(plot):
             plt.plot(d,p,c='grey')
@@ -69,13 +69,32 @@ def parse_csv():
     return df
 
 def pelt(ts):
-    plt.subplot(1,2,1)
-
     y0 = np.array(ts.tolist())
 
     breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
     breakpoint_model.fit(y0)
     return [0] + breakpoint_model.predict(pen=10)
 
+def plot_nth(df, div = 10, i = 0, j = 0):
+    split_large = np.array_split(df, div)
+    split = split_large[i].value.values
+    nth = df.iloc[j::div, :].value.values
+
+    fig, ((ax1, ax2), (hist1, hist2)) = plt.subplots(2,2, sharex = 'row', sharey = 'row')
+
+    ax1.scatter(np.arange(len(split)), split, s = 2)
+    ax1.title.set_text("First " + str(div) + "th of data")
+
+    ax2.scatter(np.arange(len(nth)), nth, s = 2)
+    ax2.title.set_text("Every " + str(div) + "th datapoint")
+
+    hist1.hist(split, density=True, bins=10)
+    hist1.title.set_text("\u03C3 = " + str(np.std(split)))
+
+    hist2.hist(nth, density=True, bins =10)
+    hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
+    
+    plt.show()
+    
 notrend = remove_trends(False)
-print(notrend)
+plot_nth(notrend)
