@@ -94,28 +94,13 @@ def graph_random_year():
 
     plt.show()
 
-def graph_whole_dataset():
-    df = pd.read_csv('data-deviza.csv')
-    df = df[df["iso_4217"] == "USD"]
-    df['date'] = pd.to_datetime(df['date'])
-    df.set_index(df['date'], inplace = True)
-
-    pelt(df)
-
-    # jenks(ts, 5, y)
-
-def pelt(df):
-    plt.subplot(1,2,1)
-
+def remove_trends(plot):
+    df = parse_csv()
     ts = df['value']
-    y0 = np.array(ts.tolist())
 
-    breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
-    breakpoint_model.fit(y0)
-    breaks = [0] + breakpoint_model.predict(pen=10)
+    breaks = pelt(ts)
 
     breaks_rpt = []
-
     notrend = []
 
     for i in range(len(breaks)-1):
@@ -137,29 +122,43 @@ def pelt(df):
 
         notrend += list(y-p)
 
-        plt.plot(d,p,c='grey')
-        plt.scatter(d,y,s=1)
+        if(plot):
+            plt.plot(d,p,c='grey')
+            plt.scatter(d,y,s=1)
+            breaks_rpt.append(ts.index[h-1])
 
-        breaks_rpt.append(ts.index[h-1])
+    if(plot):
+        breaks_rpt = pd.to_datetime(breaks_rpt)
 
-    breaks_rpt = pd.to_datetime(breaks_rpt)
-
-
-    print_legend = False
-    for i in breaks_rpt:
-        if print_legend:
-            plt.axvline(i, color='red',linestyle='dashed', label='breaks')
-            print_legend = False
-        else:
+        for i in breaks_rpt:
             plt.axvline(i, color='red',linestyle='dashed')
-    plt.grid()
-    plt.legend()
+        plt.grid()
+        plt.legend()
 
-    plt.subplot(1,2,2)
-    plt.scatter(df.date.values, notrend, s=1)
-    plt.show()
-    
-    
+        plt.subplot(1,2,2)
+        plt.scatter(df.date.values, notrend, s=1)
+        plt.show()
+
+    return notrend
+
+def parse_csv():
+    df = pd.read_csv('data-deviza.csv')
+    currency = input("Which currency would you like to see?")
+    df['date'] = pd.to_datetime(df['date'])
+    df = df[df["iso_4217"] == currency ]
+    df = df[df['date'] > dt.datetime(2000,1,1)]
+    df.set_index(df['date'], inplace = True)
+    return df
+
+def pelt(ts):
+    plt.subplot(1,2,1)
+
+    y0 = np.array(ts.tolist())
+
+    breakpoint_model = rpt.Pelt(min_size=30,model="rbf")
+    breakpoint_model.fit(y0)
+    return [0] + breakpoint_model.predict(pen=10)
+
 
 def jenks(ts, n_breaks, y):
     breaks = jenkspy.jenks_breaks(y, n_classes=n_breaks)
@@ -182,4 +181,4 @@ def jenks(ts, n_breaks, y):
     plt.legend()
     plt.show()
 
-graph_whole_dataset()
+notrend = remove_trends(True)
