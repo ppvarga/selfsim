@@ -25,8 +25,6 @@ def remove_trends(plot):
         h = breaks[i+1]
 
         frame = df[l:h]
-        
-        frame['ordinal'] = frame.date.map(dt.datetime.toordinal)
 
         d = frame.date.values
         x = frame.ordinal.values.reshape(-1,1)
@@ -66,6 +64,7 @@ def parse_csv():
     df = df[df["iso_4217"] == currency ]
     df = df[df['date'] > dt.datetime(2000,1,1)]
     df.set_index(df['date'], inplace = True)
+    df['ordinal'] = df.date.map(dt.datetime.toordinal)
     return df
 
 def pelt(ts):
