@@ -9,16 +9,18 @@ import random
 import ruptures as rpt
 import pandas as pd
 import jenkspy
+import statsmodels.api as sm
 
 
-def remove_trends(plot):
-    df = parse_csv()
+def remove_trends(df, do_plot):
     ts = df['value']
 
     breaks = pelt(ts)
 
     breaks_rpt = []
     notrend = np.array([])
+    
+    fig, (ax1, ax2) = plt.subplots(1,2)
 
     for i in range(len(breaks)-1):
         l = breaks[i]
@@ -37,29 +39,26 @@ def remove_trends(plot):
 
         notrend = np.concatenate((notrend, (y-p).reshape(-1)))
 
-        if(plot):
-            plt.plot(d,p,c='grey')
-            plt.scatter(d,y,s=1)
+        if(do_plot):
+            ax1.plot(d,p,c='grey')
+            ax1.scatter(d,y,s=1)
             breaks_rpt.append(ts.index[h-1])
 
-    if(plot):
+    if(do_plot):
         breaks_rpt = pd.to_datetime(breaks_rpt)
 
         for i in breaks_rpt:
-            plt.axvline(i, color='red',linestyle='dashed')
-        plt.grid()
+            ax1.axvline(i, color='red',linestyle='dashed')
+        ax1.grid()
 
-        plt.subplot(1,2,2)
-        plt.scatter(df.date.values, notrend, s=1)
-        plt.show()
+        ax2.scatter(df.date.values, notrend, s=1)
 
     data = {'date': df.date.values, 'value': notrend}
 
     return pd.DataFrame(data)
 
-def parse_csv():
+def parse_csv(currency):
     df = pd.read_csv('data-deviza.csv')
-    currency = input("Which currency would you like to see?")
     df['date'] = pd.to_datetime(df['date'])
     df = df[df["iso_4217"] == currency ]
     df = df[df['date'] > dt.datetime(2000,1,1)]
@@ -92,8 +91,16 @@ def plot_nth(df, div = 10, i = 0, j = 0):
 
     hist2.hist(nth, density=True, bins =10)
     hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
+
+def plot_autocorrelation(df, n=50):
+    fig, ax = plt.subplots()
+    acorr = sm.tsa.acf(df.value.values, nlags=n)
+    ax.plot(range(n+1), acorr)
+    fig.suptitle("Autocorrelation as a function of the delay")
     
-    plt.show()
-    
-notrend = remove_trends(False)
+currency = input("Which currency would you like to see?")
+df = parse_csv(currency)
+notrend = remove_trends(df, True)
 plot_nth(notrend)
+plot_autocorrelation(notrend)
+plt.show()
