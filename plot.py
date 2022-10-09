@@ -9,6 +9,7 @@ import random
 import ruptures as rpt
 import pandas as pd
 import jenkspy
+import statsmodels.api as sm
 
 
 def remove_trends(df, do_plot):
@@ -18,14 +19,14 @@ def remove_trends(df, do_plot):
 
     breaks_rpt = []
     notrend = np.array([])
+    
+    fig, (ax1, ax2) = plt.subplots(1,2)
 
     for i in range(len(breaks)-1):
         l = breaks[i]
         h = breaks[i+1]
 
         frame = df[l:h]
-        
-        frame['ordinal'] = frame.date.map(dt.datetime.toordinal)
 
         d = frame.date.values
         x = frame.ordinal.values.reshape(-1,1)
@@ -38,34 +39,32 @@ def remove_trends(df, do_plot):
 
         notrend = np.concatenate((notrend, (y-p).reshape(-1)))
 
-        if do_plot:
-            plt.plot(d,p,c='grey')
-            plt.scatter(d,y,s=1)
+        if(do_plot):
+            ax1.plot(d,p,c='grey')
+            ax1.scatter(d,y,s=1)
             breaks_rpt.append(ts.index[h-1])
 
-    if do_plot:
+    if(do_plot):
         breaks_rpt = pd.to_datetime(breaks_rpt)
 
         for i in breaks_rpt:
-            plt.axvline(i, color='red',linestyle='dashed')
-        plt.grid()
+            ax1.axvline(i, color='red',linestyle='dashed')
+        ax1.grid()
 
-        plt.subplot(1,2,2)
-        plt.scatter(df.date.values, notrend, s=1)
-        plt.show()
+        ax2.scatter(df.date.values, notrend, s=1)
 
     data = {'date': df.date.values, 'value': notrend}
 
     return pd.DataFrame(data)
 
-def parse_csv():
+def parse_csv(currency):
     df = pd.read_csv('data-deviza.csv')
-    currency = input("Which currency would you like to see?")
     df['date'] = pd.to_datetime(df['date'])
     df = df[df["iso_4217"] == currency ]
     df = df[df['date'] > dt.datetime(2000,1,1)]
     df.set_index(df['date'], inplace = True)
-    return df, currency
+    df['ordinal'] = df.date.map(dt.datetime.toordinal)
+    return df
 
 def pelt(ts):
     y0 = np.array(ts.tolist())
@@ -74,7 +73,7 @@ def pelt(ts):
     breakpoint_model.fit(y0)
     return [0] + breakpoint_model.predict(pen=10)
 
-def plot_nth(df, title, div = 10, i = 0, j = 0):
+def plot_nth(df, div = 10, i = 0, j = 0):
     split_large = np.array_split(df, div)
     split = split_large[i].value.values
     nth = df.iloc[j::div, :].value.values
@@ -92,11 +91,16 @@ def plot_nth(df, title, div = 10, i = 0, j = 0):
 
     hist2.hist(nth, density=True, bins =10)
     hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
-    
-    fig.suptitle(title)
-    plt.show()
-    
 
-df, title = parse_csv()
-notrend = remove_trends(df, False)
-plot_nth(notrend, title)
+def plot_autocorrelation(df, n=50):
+    fig, ax = plt.subplots()
+    acorr = sm.tsa.acf(df.value.values, nlags=n)
+    ax.plot(range(n+1), acorr)
+    fig.suptitle("Autocorrelation as a function of the delay")
+    
+currency = input("Which currency would you like to see?")
+df = parse_csv(currency)
+notrend = remove_trends(df, True)
+plot_nth(notrend)
+plot_autocorrelation(notrend)
+plt.show()
