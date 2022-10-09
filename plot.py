@@ -20,7 +20,8 @@ def remove_trends(df, do_plot):
     breaks_rpt = []
     notrend = np.array([])
     
-    fig, (ax1, ax2) = plt.subplots(1,2)
+    if do_plot:
+        fig, (ax1, ax2) = plt.subplots(1,2)
 
     for i in range(len(breaks)-1):
         l = breaks[i]
@@ -92,15 +93,30 @@ def plot_nth(df, div = 10, i = 0, j = 0):
     hist2.hist(nth, density=True, bins =10)
     hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
 
-def plot_autocorrelation(df, n=50):
-    fig, ax = plt.subplots()
+def plot_autocorrelation(df, separate, label, n=50):
     acorr = sm.tsa.acf(df.value.values, nlags=n)
-    ax.plot(range(n+1), acorr)
-    fig.suptitle("Autocorrelation as a function of the delay")
-    
-currency = input("Which currency would you like to see?")
-df = parse_csv(currency)
-notrend = remove_trends(df, True)
-plot_nth(notrend)
-plot_autocorrelation(notrend)
+    if separate:
+        fig, ax = plt.subplots()
+        ax.plot(range(n+1), acorr)
+        fig.suptitle("Autocorrelation as a function of the delay")
+    else:
+        plt.plot(range(n+1), acorr, label=label)
+        plt.title("Autocorrelations as functions of the delay")
+
+def plot_one_currency():
+    currency = input("Which currency would you like to see?")
+    df = parse_csv(currency)
+    notrend = remove_trends(df, True)
+    plot_nth(notrend)
+    plot_autocorrelation(notrend)
+
+def compare_autocorrs(max_delay):
+    fig, ax = plt.subplots()
+    for currency in ["USD", "CAD", "JPY", "CHF", "GBP"]:
+        df = parse_csv(currency)
+        notrend = remove_trends(df, False)
+        plot_autocorrelation(notrend, False, currency, n=max_delay)
+    ax.legend()
+
+compare_autocorrs(500)
 plt.show()
