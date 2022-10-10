@@ -2,14 +2,12 @@ from locale import format_string
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import csv
 import datetime as dt
 from sklearn.linear_model import LinearRegression
-import random
 import ruptures as rpt
 import pandas as pd
-import jenkspy
 import statsmodels.api as sm
+import parse
 
 
 def remove_trends(df, do_plot):
@@ -58,7 +56,7 @@ def remove_trends(df, do_plot):
 
     return pd.DataFrame(data)
 
-def parse_csv(currency):
+def parse_curr_csv(currency):
     df = pd.read_csv('data-deviza.csv')
     df['date'] = pd.to_datetime(df['date'])
     df = df[df["iso_4217"] == currency ]
@@ -105,7 +103,7 @@ def plot_autocorrelation(df, separate, label, n=50):
 
 def plot_one_currency():
     currency = input("Which currency would you like to see?")
-    df = parse_csv(currency)
+    df = parse_curr_csv(currency)
     notrend = remove_trends(df, True)
     plot_nth(notrend)
     plot_autocorrelation(notrend)
@@ -113,10 +111,25 @@ def plot_one_currency():
 def compare_autocorrs(max_delay):
     fig, ax = plt.subplots()
     for currency in ["USD", "CAD", "JPY", "CHF", "GBP"]:
-        df = parse_csv(currency)
+        df = parse_curr_csv(currency)
         notrend = remove_trends(df, False)
         plot_autocorrelation(notrend, False, currency, n=max_delay)
     ax.legend()
 
-compare_autocorrs(500)
-plt.show()
+def parse_xz(file_id = 0, dataset_size=50000):
+    filename = "xz{id}.csv".format(id=file_id)
+    df = pd.read_csv(filename, nrows=dataset_size)
+    df.rename(columns={"Signal Unit Time Stamp (hi-res)": "timestamp"}, inplace=True)
+    format_str = "00:00:{sec}.{mili}'{micro}'{p}"
+    
+    nums = np.zeros(dataset_size)
+    for i in range(dataset_size):
+        parsed = parse.parse(format_str, df["timestamp"][i])
+        nums[i] = int(str(parsed["sec"]) + str(parsed["mili"]) + str(parsed["micro"]) + str(parsed["p"]))
+    df["nums"] = nums
+
+    df["diffs"] = np.concatenate(( np.array([None]), np.diff(nums)))
+
+    print(df)
+
+parse_xz()
