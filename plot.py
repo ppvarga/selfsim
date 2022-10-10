@@ -91,14 +91,14 @@ def plot_nth(df, div = 10, i = 0, j = 0):
     hist2.hist(nth, density=True, bins =10)
     hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
 
-def plot_autocorrelation(df, separate, label, n=50):
-    acorr = sm.tsa.acf(df.value.values, nlags=n)
+def plot_autocorrelation(values, separate, label, max_delay=50):
+    acorr = sm.tsa.acf(values, nlags=max_delay)
     if separate:
         fig, ax = plt.subplots()
-        ax.plot(range(n+1), acorr)
+        ax.plot(range(max_delay+1), acorr)
         fig.suptitle("Autocorrelation as a function of the delay")
     else:
-        plt.plot(range(n+1), acorr, label=label)
+        plt.plot(range(max_delay+1), acorr, label=label)
         plt.title("Autocorrelations as functions of the delay")
 
 def plot_one_currency():
@@ -106,14 +106,14 @@ def plot_one_currency():
     df = parse_curr_csv(currency)
     notrend = remove_trends(df, True)
     plot_nth(notrend)
-    plot_autocorrelation(notrend)
+    plot_autocorrelation(notrend.value)
 
 def compare_autocorrs(max_delay):
     fig, ax = plt.subplots()
     for currency in ["USD", "CAD", "JPY", "CHF", "GBP"]:
         df = parse_curr_csv(currency)
         notrend = remove_trends(df, False)
-        plot_autocorrelation(notrend, False, currency, n=max_delay)
+        plot_autocorrelation(notrend.value, False, currency, max_delay=max_delay)
     ax.legend()
 
 def parse_xz(file_id = 0, dataset_size=50000):
@@ -128,8 +128,17 @@ def parse_xz(file_id = 0, dataset_size=50000):
         nums[i] = int(str(parsed["sec"]) + str(parsed["mili"]) + str(parsed["micro"]) + str(parsed["p"]))
     df["nums"] = nums
 
-    df["diffs"] = np.concatenate(( np.array([None]), np.diff(nums)))
+    df["diffs"] = np.concatenate(( np.array([0]), np.diff(nums)))
 
-    print(df)
+    return df
 
-parse_xz()
+def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15):
+    df = parse_xz(file_id, dataset_size)
+    fig, (ax1, ax2) = plt.subplots(1,2)
+    x = np.arange(dataset_size)
+    ax1.scatter(np.arange(dataset_size), df.diffs)
+    acorr = sm.tsa.acf(df.diffs, nlags=max_delay)
+    ax2.plot(np.arange(max_delay+1), acorr)
+
+plot_xz_autocorr()
+plt.show()
