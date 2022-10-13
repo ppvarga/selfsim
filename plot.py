@@ -139,6 +139,7 @@ def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15):
     ax1.scatter(np.arange(dataset_size), df.diffs)
     acorr = sm.tsa.acf(df.diffs, nlags=max_delay)
     ax2.plot(np.arange(max_delay+1), acorr)
-
-plot_xz_autocorr()
-plt.show()
+for currency in ['USD', 'CAD', 'JPY', 'GBP', 'CHF']:
+    trendy = parse_curr_csv(currency)
+    notrend = remove_trends(trendy, False)
+    notrend.to_csv("{curr}_notrend.csv".format(curr =currency), index=False)
