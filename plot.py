@@ -139,7 +139,25 @@ def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15):
     ax1.scatter(np.arange(dataset_size), df.diffs)
     acorr = sm.tsa.acf(df.diffs, nlags=max_delay)
     ax2.plot(np.arange(max_delay+1), acorr)
-for currency in ['USD', 'CAD', 'JPY', 'GBP', 'CHF']:
-    trendy = parse_curr_csv(currency)
-    notrend = remove_trends(trendy, False)
-    notrend.to_csv("{curr}_notrend.csv".format(curr =currency), index=False)
+
+def plot_water_levels(max_delay = 2000):
+    df = pd.read_csv('data-vizallas.csv')
+    df['date'] = pd.to_datetime(df['date'])
+    counter = 0
+    locs = df.individual.unique()
+    #fig, axs = plt.subplots(len(locs))
+    figacr, axsacr = plt.subplots()
+    figacr.suptitle("Autocorrelations as functions of the delay")
+    for loc in locs:
+        locdf = df[df["individual"] == loc ]
+        locdf.set_index(locdf['date'], inplace = True)
+        locdf['ordinal'] = locdf.date.map(dt.datetime.toordinal)
+        #axs[counter].scatter(locdf.ordinal, locdf.value, s=1)
+        #axs[counter].title.set_text(loc)
+        acorr = sm.tsa.acf(locdf.value, nlags = max_delay)
+        axsacr.plot(np.arange(max_delay+1), acorr, label=loc)
+        counter += 1
+    axsacr.legend()
+
+plot_water_levels()
+plt.show()
