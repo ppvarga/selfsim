@@ -116,7 +116,7 @@ def compare_autocorrs(max_delay):
         plot_autocorrelation(notrend.value, False, currency, max_delay=max_delay)
     ax.legend()
 
-def parse_xz(file_id = 0, dataset_size=50000):
+def parse_xz(file_id = 0, dataset_size=40000, compute_diffs = True):
     filename = "xz{id}.csv".format(id=file_id)
     df = pd.read_csv(filename, nrows=dataset_size)
     df.rename(columns={"Signal Unit Time Stamp (hi-res)": "timestamp"}, inplace=True)
@@ -128,7 +128,8 @@ def parse_xz(file_id = 0, dataset_size=50000):
         nums[i] = int(str(parsed["sec"]) + str(parsed["mili"]) + str(parsed["micro"]) + str(parsed["p"]))
     df["nums"] = nums
 
-    df["diffs"] = np.concatenate(( np.array([0]), np.diff(nums)))
+    if(compute_diffs):
+        df["diffs"] = np.concatenate(( np.array([0]), np.diff(nums)))
 
     return df
 
@@ -178,6 +179,10 @@ def hurst_water_levels():
         H, c, data = hurst.compute_Hc(locdf.value, kind='random_walk', simplified=True)
         print("{loc}: {H}".format(loc = loc, H = H))
 
+def hurst_xz(file_id = 0, dataset_size = 40000):
+    df = parse_xz(file_id, dataset_size, True)
+    H, c, data = hurst.compute_Hc(df.diffs, kind='random_walk', simplified=True)
+    print("Hurst exponent for the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = H))
 
-hurst_water_levels()
+hurst_xz()
 plt.show()
