@@ -8,7 +8,7 @@ import ruptures as rpt
 import pandas as pd
 import statsmodels.api as sm
 import parse
-
+import hurst
 
 def remove_trends(df, do_plot):
     ts = df['value']
@@ -159,5 +159,13 @@ def plot_water_levels(max_delay = 2000):
         counter += 1
     axsacr.legend()
 
-plot_water_levels()
+def hurst_curr():
+    for curr in ['USD', 'CAD', 'JPY', 'CHF', 'GBP']:
+        df = parse_curr_csv(curr)
+        Htrend, c, data = hurst.compute_Hc(df.value, kind='random_walk', simplified=True)
+        notrend = remove_trends(df, False)
+        Hnotrend, c, data = hurst.compute_Hc(notrend.value, kind='random_walk', simplified=True)
+        print("{curr}: {Htrend} with trend, {Hnotrend} with no trend".format(curr = curr, Htrend = Htrend, Hnotrend = Hnotrend))
+
+hurst_curr()
 plt.show()
