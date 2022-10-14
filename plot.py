@@ -160,6 +160,7 @@ def plot_water_levels(max_delay = 2000):
     axsacr.legend()
 
 def hurst_curr():
+    print("Hurst exponents for currencies")
     for curr in ['USD', 'CAD', 'JPY', 'CHF', 'GBP']:
         df = parse_curr_csv(curr)
         Htrend, c, data = hurst.compute_Hc(df.value, kind='random_walk', simplified=True)
@@ -167,5 +168,16 @@ def hurst_curr():
         Hnotrend, c, data = hurst.compute_Hc(notrend.value, kind='random_walk', simplified=True)
         print("{curr}: {Htrend} with trend, {Hnotrend} with no trend".format(curr = curr, Htrend = Htrend, Hnotrend = Hnotrend))
 
-hurst_curr()
+def hurst_water_levels():
+    print("Hurst exponents for water levels")
+    df = pd.read_csv('data-vizallas.csv')
+    df['date'] = pd.to_datetime(df['date'])
+    locs = df.individual.unique()
+    for loc in locs:
+        locdf = df[df["individual"] == loc ]
+        H, c, data = hurst.compute_Hc(locdf.value, kind='random_walk', simplified=True)
+        print("{loc}: {H}".format(loc = loc, H = H))
+
+
+hurst_water_levels()
 plt.show()
