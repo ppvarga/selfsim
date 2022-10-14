@@ -179,10 +179,26 @@ def hurst_water_levels():
         H, c, data = hurst.compute_Hc(locdf.value, kind='random_walk', simplified=True)
         print("{loc}: {H}".format(loc = loc, H = H))
 
-def hurst_xz(file_id = 0, dataset_size = 40000):
+def hurst_xz(file_id = 0, dataset_size = 40000, plot_normalized = False):
     df = parse_xz(file_id, dataset_size, True)
     H, c, data = hurst.compute_Hc(df.diffs, kind='random_walk', simplified=True)
-    print("Hurst exponent for the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = H))
+    print("Hurst exponent for the diffs of the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = H))
 
-hurst_xz()
+    normalized_diffs = df.diffs - np.mean(df.diffs)
+    Hnorm, c, data = hurst.compute_Hc(normalized_diffs, kind='change', simplified=True)
+    print("Hurst exponent for the normalized diffs of the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = Hnorm))
+    if(plot_normalized):
+        fig, (ax1, ax2) = plt.subplots(2)
+        ax1.scatter(np.arange(dataset_size), normalized_diffs, s=1)
+        ax2.plot(np.arange(dataset_size), np.cumsum(normalized_diffs))
+        fig, ax = plt.subplots(1)
+        max_delay = 100
+        acorr = sm.tsa.acf(normalized_diffs, nlags = max_delay)
+        ax.plot(np.arange(max_delay+1), acorr)
+
+    diff_diffs = np.concatenate((np.array([0]), np.diff(df.diffs)))
+    Hdiff, c, data = hurst.compute_Hc(diff_diffs, kind='change', simplified=True)
+    print("Hurst exponent for the diffs of the diffs of the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = Hdiff))
+
+hurst_xz(plot_normalized=True)
 plt.show()
