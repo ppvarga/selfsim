@@ -60,7 +60,7 @@ def parse_curr_csv(currency):
     df = pd.read_csv('data-deviza.csv')
     df['date'] = pd.to_datetime(df['date'])
     df = df[df["iso_4217"] == currency ]
-    df = df[df['date'] > dt.datetime(2000,1,1)]
+    df = df[df['date'] >= dt.datetime(2000,1,1)]
     df.set_index(df['date'], inplace = True)
     df['ordinal'] = df.date.map(dt.datetime.toordinal)
     return df
@@ -200,5 +200,26 @@ def hurst_xz(file_id = 0, dataset_size = 40000, plot_normalized = False):
     Hdiff, c, data = hurst.compute_Hc(diff_diffs, kind='change', simplified=True)
     print("Hurst exponent for the diffs of the diffs of the first {n} datapoints of xz{id}.csv: {H}".format(n = dataset_size, id = file_id, H = Hdiff))
 
-hurst_xz(plot_normalized=True)
+def compare_trend_notrend_curr(max_delay = 300):
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2)
+    for curr in ['CAD', 'CHF', 'GBP', 'JPY', 'USD']:
+        df = parse_curr_csv(curr)
+        ax1.scatter(df.date, df.value, s = 1, label=curr)
+
+        delays = range(max_delay+1)
+        acorr = sm.tsa.acf(df.value, nlags=max_delay)
+        ax2.plot(delays, acorr, label=curr)
+
+        notrend = remove_trends(df, False)
+        ax3.scatter(notrend.date, notrend.value, s = 1, label=curr)
+
+        acorr_notrend = sm.tsa.acf(notrend.value, nlags=max_delay)
+        ax4.plot(delays, acorr_notrend, label=curr)
+        
+    ax1.legend()
+    ax2.legend()
+    ax3.legend()
+    ax4.legend()
+
+compare_trend_notrend_curr(2000)
 plt.show()
