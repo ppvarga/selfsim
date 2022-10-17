@@ -47,7 +47,7 @@ def remove_trends(df, do_plot):
         breaks_rpt = pd.to_datetime(breaks_rpt)
 
         for i in breaks_rpt:
-            ax1.axvline(i, color='red',linestyle='dashed')
+            ax1.axvline(i, color='red',linestyle='dashed', linewidth=1)
         ax1.grid()
 
         ax2.scatter(df.date.values, notrend, s=1)
@@ -151,7 +151,7 @@ def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15, only_aut
         ax1.scatter(np.arange(dataset_size), df.diffs)
         ax2.plot(np.arange(max_delay+1), acorr)
 
-def plot_water_levels(max_delay = 2000):
+def plot_water_level_acorr(max_delay = 2000):
     df = pd.read_csv('data-vizallas.csv')
     df['date'] = pd.to_datetime(df['date'])
     counter = 0
@@ -231,6 +231,5 @@ def compare_trend_notrend_curr(max_delay = 300):
     ax3.legend()
     ax4.legend()
 
-df = remove_trends(parse_curr_csv("USD"), False)
-plot_nth(df)
+hurst_water_levels()
 plt.show()
