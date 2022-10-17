@@ -72,12 +72,12 @@ def pelt(ts):
     breakpoint_model.fit(y0)
     return [0] + breakpoint_model.predict(pen=10)
 
-def plot_nth(df, div = 10, i = 0, j = 0):
+def plot_nth(df, div = 10, i = 0, j = 0, max_delay = 250):
     split_large = np.array_split(df, div)
     split = split_large[i].value.values
     nth = df.iloc[j::div, :].value.values
 
-    fig, ((ax1, ax2), (hist1, hist2)) = plt.subplots(2,2, sharex = 'row', sharey = 'row')
+    fig, ((ax1, ax2), (hist1, hist2), (acorr1, acorr2)) = plt.subplots(3,2, sharex = 'row', sharey = 'row')
 
     ax1.scatter(np.arange(len(split)), split, s = 2)
     ax1.title.set_text("First " + str(div) + "th of data")
@@ -90,6 +90,12 @@ def plot_nth(df, div = 10, i = 0, j = 0):
 
     hist2.hist(nth, density=True, bins =10)
     hist2.title.set_text("\u03C3 = " + str(np.std(nth)))
+
+    acorr_split = sm.tsa.acf(split, nlags=max_delay)
+    acorr1.plot(range(max_delay+1), acorr_split)
+
+    acorr_nth = sm.tsa.acf(nth, nlags=max_delay)
+    acorr2.plot(range(max_delay+1), acorr_nth)
 
 def plot_autocorrelation(values, separate, label, max_delay=50):
     acorr = sm.tsa.acf(values, nlags=max_delay)
@@ -133,13 +139,17 @@ def parse_xz(file_id = 0, dataset_size=40000, compute_diffs = True):
 
     return df
 
-def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15):
+def plot_xz_autocorr(file_id = 0, dataset_size = 40000, max_delay = 15, only_autocorr = False):
     df = parse_xz(file_id, dataset_size)
-    fig, (ax1, ax2) = plt.subplots(1,2)
     x = np.arange(dataset_size)
-    ax1.scatter(np.arange(dataset_size), df.diffs)
     acorr = sm.tsa.acf(df.diffs, nlags=max_delay)
-    ax2.plot(np.arange(max_delay+1), acorr)
+
+    if(only_autocorr):
+        plt.plot(np.arange(max_delay+1), acorr)
+    else:
+        fig, (ax1, ax2) = plt.subplots(1,2)
+        ax1.scatter(np.arange(dataset_size), df.diffs)
+        ax2.plot(np.arange(max_delay+1), acorr)
 
 def plot_water_levels(max_delay = 2000):
     df = pd.read_csv('data-vizallas.csv')
@@ -148,7 +158,7 @@ def plot_water_levels(max_delay = 2000):
     locs = df.individual.unique()
     #fig, axs = plt.subplots(len(locs))
     figacr, axsacr = plt.subplots()
-    figacr.suptitle("Autocorrelations as functions of the delay")
+    #figacr.suptitle("Autocorrelations as functions of the delay")
     for loc in locs:
         locdf = df[df["individual"] == loc ]
         locdf.set_index(locdf['date'], inplace = True)
@@ -221,5 +231,6 @@ def compare_trend_notrend_curr(max_delay = 300):
     ax3.legend()
     ax4.legend()
 
-compare_trend_notrend_curr(2000)
+df = remove_trends(parse_curr_csv("USD"), False)
+plot_nth(df)
 plt.show()
