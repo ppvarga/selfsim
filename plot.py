@@ -295,5 +295,14 @@ def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3,
     ax3.bar(range(n_bins*factor), small_bins, width = 1)
     ax4.plot(range(max_delay+1), acorr_small)
 
-autocorr_xz_bins()
+def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3):
+    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
+
+    H_big, c_big, data_big = hurst.compute_Hc(big_bins, kind='random_walk', simplified=True)
+    H_small, c_small, data_small = hurst.compute_Hc(small_bins, kind='random_walk', simplified=True)
+
+    print("Hurst exponent for the number of packets per unit time, from the first {n} datapoints of xz{id}.csv, with {bins} bins: {H}".format(n = dataset_size, id = file_id, bins = n_bins, H = H_big))
+    print("Hurst exponent for the number of packets per unit time, from the first {n} datapoints of xz{id}.csv, with {bins} bins: {H}".format(n = dataset_size, id = file_id, bins = n_bins*factor, H = H_small))
+
+hurst_xz_bins()
 plt.show()
