@@ -248,5 +248,38 @@ def remove_jumps_xz(file_id = 0, dataset_size = 100000, threshold = 7500, do_plo
 
     return filtered
 
-print(remove_jumps_xz(dataset_size = 6000000, do_plot = True))
+def parse_timestamps( dataset_size=100000, compute_diffs = True):
+    df = pd.read_csv("timestamps.csv", nrows=dataset_size)
+    df.rename(columns={"Date & time": "timestamp"}, inplace=True)
+    
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    if(compute_diffs):
+        df["diffs"] = np.concatenate(( np.array([0]), np.diff(df.timestamp)))
+
+    print(df)
+
+    return df
+
+def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3):
+    df = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size)
+    time_unit = np.array(df.nums)[-1]/(n_bins*factor)
+
+    big_bins = np.zeros(n_bins)
+    small_bins = np.zeros(n_bins*factor)
+
+    for i in range(n_bins):
+        for j in range(factor):
+            lower_limit = i*factor*time_unit + j*time_unit
+            upper_limit = lower_limit+time_unit
+            count = len(df[(df.nums >= lower_limit) & (df.nums < upper_limit)])
+            small_bins[i*factor+j] = count
+            big_bins[i] += count
+    
+    fig, (ax1, ax2) = plt.subplots(2)
+    ax1.bar(range(n_bins), big_bins, width = 1)
+    ax2.bar(range(n_bins*factor), small_bins, width = 1)
+
+
+scale_independence_xz()
 plt.show()
