@@ -231,5 +231,22 @@ def compare_trend_notrend_curr(max_delay = 300):
     ax3.legend()
     ax4.legend()
 
-hurst_water_levels()
+def remove_jumps_xz(file_id = 0, dataset_size = 100000, threshold = 7500, do_plot = False, do_write = True):
+    df = parse_xz(file_id, dataset_size, True)
+    filtered = df[df.diffs < threshold].copy().reset_index(drop=True)
+    filtered.nums = np.cumsum(filtered.diffs)
+    
+    if(do_plot):
+        fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2,2)
+        ax1.scatter(range(len(df.diffs)), df.diffs, s = 1)
+        ax2.plot(range(len(df.diffs)), df.nums)
+        ax3.scatter(range(len(filtered.diffs)), filtered.diffs, s = 1)
+        ax4.plot(range(len(filtered.diffs)), filtered.nums)
+
+    if(do_write):
+        filtered.to_csv("xz{id}_nojumps.csv".format(id = file_id))
+
+    return filtered
+
+print(remove_jumps_xz(dataset_size = 6000000, do_plot = True))
 plt.show()
