@@ -304,5 +304,9 @@ def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3):
     print("Hurst exponent for the number of packets per unit time, from the first {n} datapoints of xz{id}.csv, with {bins} bins: {H}".format(n = dataset_size, id = file_id, bins = n_bins, H = H_big))
     print("Hurst exponent for the number of packets per unit time, from the first {n} datapoints of xz{id}.csv, with {bins} bins: {H}".format(n = dataset_size, id = file_id, bins = n_bins*factor, H = H_small))
 
-hurst_xz_bins()
+def plot_timestamps(dataset_size=100000):
+    df = parse_timestamps(dataset_size)
+    plt.scatter(range(len(df.timestamp)), df.timestamp, s=1)
+
+plot_timestamps()
 plt.show()
