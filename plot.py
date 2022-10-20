@@ -261,7 +261,7 @@ def parse_timestamps( dataset_size=100000, compute_diffs = True):
 
     return df
 
-def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3):
+def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3, do_plot=False):
     df = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size)
     time_unit = np.array(df.nums)[-1]/(n_bins*factor)
 
@@ -276,10 +276,24 @@ def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor
             small_bins[i*factor+j] = count
             big_bins[i] += count
     
-    fig, (ax1, ax2) = plt.subplots(2)
+    if(do_plot):
+        fig, (ax1, ax2) = plt.subplots(2)
+        ax1.bar(range(n_bins), big_bins, width = 1)
+        ax2.bar(range(n_bins*factor), small_bins, width = 1)
+
+    return big_bins, small_bins
+
+def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3, max_delay = 1000):
+    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
+    max_delay = 100
+    acorr_big = sm.tsa.acf(big_bins, nlags = max_delay)
+    acorr_small = sm.tsa.acf(small_bins, nlags = max_delay)
+
+    fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2,2)
     ax1.bar(range(n_bins), big_bins, width = 1)
-    ax2.bar(range(n_bins*factor), small_bins, width = 1)
+    ax2.plot(range(max_delay), acorr_big)
+    ax3.bar(range(n_bins*factor), small_bins, width = 1)
+    ax4.plot(range(max_delay+1), acorr_small)
 
-
-scale_independence_xz()
+autocorr_xz_bins()
 plt.show()
