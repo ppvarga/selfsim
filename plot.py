@@ -257,12 +257,17 @@ def parse_timestamps( dataset_size=100000, compute_diffs = True):
     if(compute_diffs):
         df["diffs"] = np.concatenate(( np.array([0]), np.diff(df.timestamp)))
 
+    df.sort_values(by=["timestamp"])
+
     print(df)
 
     return df
 
-def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3, do_plot=False):
-    df = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size)
+def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, do_plot=False, offset = 30000):
+    non_offset = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size+offset)
+    df = non_offset[offset:].copy().reset_index(drop=True)
+    df
+    print(df)
     time_unit = np.array(df.nums)[-1]/(n_bins*factor)
 
     big_bins = np.zeros(n_bins)
@@ -276,14 +281,16 @@ def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor
             small_bins[i*factor+j] = count
             big_bins[i] += count
     
+    small_bins = small_bins[:n_bins]
+    
     if(do_plot):
         fig, (ax1, ax2) = plt.subplots(2)
         ax1.bar(range(n_bins), big_bins, width = 1)
-        ax2.bar(range(n_bins*factor), small_bins, width = 1)
+        ax2.bar(range(n_bins), small_bins, width = 1)
 
     return big_bins, small_bins
 
-def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3, max_delay = 1000):
+def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, max_delay = 1000):
     big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
     max_delay = 100
     acorr_big = sm.tsa.acf(big_bins, nlags = max_delay)
@@ -292,11 +299,13 @@ def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3,
     fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2,2)
     ax1.bar(range(n_bins), big_bins, width = 1)
     ax2.plot(range(max_delay), acorr_big)
-    ax3.bar(range(n_bins*factor), small_bins, width = 1)
+    ax3.bar(range(n_bins), small_bins, width = 1)
     ax4.plot(range(max_delay+1), acorr_small)
 
-def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 3):
+def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10):
     big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
+
+    small_bins = small_bins
 
     H_big, c_big, data_big = hurst.compute_Hc(big_bins, kind='random_walk', simplified=True)
     H_small, c_small, data_small = hurst.compute_Hc(small_bins, kind='random_walk', simplified=True)
@@ -308,5 +317,5 @@ def plot_timestamps(dataset_size=100000):
     df = parse_timestamps(dataset_size)
     plt.scatter(range(len(df.timestamp)), df.timestamp, s=1)
 
-plot_timestamps()
+scale_independence_xz(do_plot=True)
 plt.show()
