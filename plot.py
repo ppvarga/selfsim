@@ -266,16 +266,16 @@ def parse_timestamps( dataset_size=100000, compute_diffs = True):
 def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, do_plot=False, offset = 30000):
     non_offset = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size+offset)
     df = non_offset[offset:].copy().reset_index(drop=True)
-    df
     print(df)
-    time_unit = np.array(df.nums)[-1]/(n_bins*factor)
+    min_time = np.array(df.nums)[0]
+    time_unit = (np.array(df.nums)[-1] - min_time)/(n_bins*factor)
 
     big_bins = np.zeros(n_bins)
     small_bins = np.zeros(n_bins*factor)
 
     for i in range(n_bins):
         for j in range(factor):
-            lower_limit = i*factor*time_unit + j*time_unit
+            lower_limit = min_time + i*factor*time_unit + j*time_unit
             upper_limit = lower_limit+time_unit
             count = len(df[(df.nums >= lower_limit) & (df.nums < upper_limit)])
             small_bins[i*factor+j] = count
@@ -317,5 +317,5 @@ def plot_timestamps(dataset_size=100000):
     df = parse_timestamps(dataset_size)
     plt.scatter(range(len(df.timestamp)), df.timestamp, s=1)
 
-scale_independence_xz(do_plot=True)
+scale_independence_xz(do_plot=True, offset=60000)
 plt.show()
