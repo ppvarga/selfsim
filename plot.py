@@ -263,7 +263,7 @@ def parse_timestamps( dataset_size=100000, compute_diffs = True):
 
     return df
 
-def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, do_plot=False, offset = 30000):
+def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, do_plot=False, offset = 60000):
     non_offset = remove_jumps_xz(file_id=file_id, dataset_size=dataset_size+offset)
     df = non_offset[offset:].copy().reset_index(drop=True)
     print(df)
@@ -290,8 +290,8 @@ def scale_independence_xz(file_id = 0, dataset_size = 100000, n_bins=100, factor
 
     return big_bins, small_bins
 
-def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, max_delay = 1000):
-    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
+def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, max_delay = 100, offset = 60000):
+    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor, offset)
     max_delay = 100
     acorr_big = sm.tsa.acf(big_bins, nlags = max_delay)
     acorr_small = sm.tsa.acf(small_bins, nlags = max_delay)
@@ -300,10 +300,10 @@ def autocorr_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10
     ax1.bar(range(n_bins), big_bins, width = 1)
     ax2.plot(range(max_delay), acorr_big)
     ax3.bar(range(n_bins), small_bins, width = 1)
-    ax4.plot(range(max_delay+1), acorr_small)
+    ax4.plot(range(max_delay), acorr_small)
 
-def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10):
-    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor)
+def hurst_xz_bins(file_id = 0, dataset_size = 100000, n_bins=100, factor = 10, offset = 60000):
+    big_bins, small_bins = scale_independence_xz(file_id, dataset_size, n_bins, factor, offset)
 
     small_bins = small_bins
 
@@ -317,5 +317,5 @@ def plot_timestamps(dataset_size=100000):
     df = parse_timestamps(dataset_size)
     plt.scatter(range(len(df.timestamp)), df.timestamp, s=1)
 
-scale_independence_xz(do_plot=True, offset=60000)
+autocorr_xz_bins()
 plt.show()
